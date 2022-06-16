@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+
+  php-apache:
+    build:
+      context: .
+      target: php-apache
+    image: local/benchmarks/php-apache:latest
+    ports: [8000:80]
