@@ -38,3 +38,23 @@ RUN sed -ri -e 's!/var/www/!/app/!g' /etc/apache2/apache2.conf /etc/apache2/conf
 USER www-data:www-data
 WORKDIR /app
 RUN composer create-project laravel/laravel . ${LARAVEL_VERSION}
+
+
+###
+# PHP + Octane
+###
+FROM php:8.1-cli AS php-octane
+
+# External tools
+COPY --from=composer /usr/bin/composer /usr/local/bin/
+COPY --from=php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
+
+# PHP extensions
+RUN install-php-extensions pcntl swoole zip
+
+# Initialize and run the application
+WORKDIR /app
+RUN composer create-project laravel/laravel . ${LARAVEL_VERSION}
+RUN composer require laravel/octane
+RUN php artisan octane:install --server=swoole
+CMD ["php", "artisan", "octane:start", "--host=0.0.0.0", "--port=8000"]

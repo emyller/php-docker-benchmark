@@ -7,3 +7,10 @@ services:
       target: php-apache
     image: local/benchmarks/php-apache:latest
     ports: [8000:80]
+
+  php-octane:
+    build:
+      context: .
+      target: php-octane
+    image: local/benchmarks/php-octane:latest
+    ports: [8000:8000]
