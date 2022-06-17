@@ -25,3 +25,10 @@ services:
       target: php-octane
     image: local/benchmarks/php-octane:latest
     ports: [8000:8000]
+
+  php-octane-alpine:
+    build:
+      context: .
+      target: php-octane-alpine
+    image: local/benchmarks/php-octane-alpine:latest
+    ports: [8000:8000]

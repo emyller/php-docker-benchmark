@@ -76,3 +76,23 @@ RUN composer create-project laravel/laravel . ${LARAVEL_VERSION}
 RUN composer require laravel/octane
 RUN php artisan octane:install --server=swoole
 CMD ["php", "artisan", "octane:start", "--host=0.0.0.0", "--port=8000"]
+
+
+###
+# PHP + Octane
+###
+FROM php:8.1-cli-alpine AS php-octane-alpine
+
+# External tools
+COPY --from=composer /usr/bin/composer /usr/local/bin/
+COPY --from=php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
+
+# PHP extensions
+RUN install-php-extensions pcntl swoole zip
+
+# Initialize and run the application
+WORKDIR /app
+RUN composer create-project laravel/laravel . ${LARAVEL_VERSION}
+RUN composer require laravel/octane
+RUN php artisan octane:install --server=swoole
+CMD ["php", "artisan", "octane:start", "--host=0.0.0.0", "--port=8000"]
