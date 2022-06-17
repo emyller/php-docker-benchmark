@@ -59,6 +59,49 @@ RUN composer create-project laravel/laravel . ${LARAVEL_VERSION}
 
 
 ###
+# PHP-FPM + nginx (custom image)
+###
+FROM ubuntu:jammy AS php-fpm-nginx-custom
+ENV DEBIAN_FRONTEND noninteractive
+
+# External tools
+COPY --from=composer /usr/bin/composer /usr/local/bin/
+
+# Add extra OS package repositories
+RUN apt update && apt install -y software-properties-common && \
+  apt-add-repository ppa:nginx/stable -y && \
+  apt-add-repository ppa:ondrej/php -y && \
+apt clean
+
+# Install nginx
+RUN apt install -y nginx && apt clean
+
+# Install PHP
+ARG PHP_VERSION
+ENV PHP_VERSION ${PHP_VERSION}
+RUN apt install -y \
+  php${PHP_VERSION} \
+  php${PHP_VERSION}-curl \
+  php${PHP_VERSION}-fpm \
+  php${PHP_VERSION}-xml \
+  php${PHP_VERSION}-zip \
+&& apt clean
+
+# Run PHP-FPM
+RUN sed -ri -e 's!^listen =[^$]*!listen = php-fpm:9000!g' /etc/php/${PHP_VERSION}/fpm/pool.d/www.conf
+COPY start-server.sh /
+CMD ["sh", "/start-server.sh"]
+
+# Initialize and run the application
+USER www-data:www-data
+WORKDIR /app
+RUN composer create-project laravel/laravel . ${LARAVEL_VERSION}
+
+# Run containers as root
+USER root
+
+
+###
 # PHP + Octane
 ###
 FROM php:${PHP_VERSION}-cli AS php-octane

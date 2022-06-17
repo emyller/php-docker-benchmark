@@ -19,6 +19,15 @@ services:
     depends_on: [php-fpm]
     ports: [8000:80]
 
+  php-fpm-nginx-custom:
+    build:
+      context: .
+      target: php-fpm-nginx-custom
+    image: local/benchmarks/php-fpm-nginx-custom:latest
+    volumes: [./nginx.conf:/etc/nginx/sites-enabled/default:ro]
+    ports: [8000:80]
+    extra_hosts: [php-fpm:127.0.0.1]
+
   php-octane:
     build:
       context: .

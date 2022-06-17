@@ -110,6 +110,7 @@ if __name__ == '__main__':
     for benchmark in [
         Benchmark(target='php-apache'),
         Benchmark(target='php-fpm-nginx', service_name='php-fpm'),
+        Benchmark(target='php-fpm-nginx-custom'),
         Benchmark(target='php-octane'),
         Benchmark(target='php-octane-alpine'),
     ]:
