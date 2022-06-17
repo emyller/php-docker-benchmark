@@ -1,5 +1,6 @@
 import contextlib
 import dataclasses
+import io
 import math
 import shlex
 import subprocess
@@ -8,17 +9,26 @@ import time
 import urllib.request
 
 
-def run(cmd: str):
+def run(cmd: str, check=False):
     """
     Run a command and wait for it to finish
     """
-    cmd_args = shlex.split(cmd)
-    subprocess.run(
+    cmd_args = shlex.split(cmd)  # Split string in shell args
+
+    process = subprocess.run(  # Run the command
         cmd_args,
-        check=False,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
     )
+
+    if not check:  # We're done if not checking for return code
+        return
+
+    try:  # Raise if command wasn't successful
+        process.check_returncode()
+    except subprocess.CalledProcessError:
+        print(process.stdout.decode())
+        raise
 
 
 @dataclasses.dataclass
@@ -55,7 +65,7 @@ class Benchmark:
         """
         service = self.service_name or self.target
         with self.timer(600) as result:  # 10 minutes timeout
-            run(f'docker-compose build {service} --no-cache')
+            run(f'docker-compose build {service} --no-cache', check=True)
         return result['elapsed']
 
     def measure_requests(self):
@@ -63,7 +73,7 @@ class Benchmark:
         Run Docker services and measure requests time
         """
         # Start the service
-        run(f'docker-compose run -d --rm --service-ports {self.target}')
+        run(f'docker-compose run -d --rm --service-ports {self.target}', check=True)
         time.sleep(3)  # Some warmup time
 
         try:  # Measure requests
