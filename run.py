@@ -1,40 +1,17 @@
+import contextlib
+import dataclasses
+import math
 import shlex
-import socket
 import subprocess
+import threading
 import time
 import urllib.request
 
-TIMEOUT = 5
 
-
-def time_request(url):
+def run(cmd: str):
     """
-    Make a HTTP GET request to the given URL
+    Run a command and wait for it to finish
     """
-    start = time.time()
-    response = urllib.request.urlopen(url)
-    end = time.time()
-    delta = end - start
-    return delta
-
-
-def wait_for_port(host, port):
-    """
-    Wait until a port is ready to accept connections
-    """
-    start = time.perf_counter()
-    while True:
-        try:
-            with socket.create_connection((host, port), timeout=TIMEOUT):
-                break
-        except OSError as exc:
-            time.sleep(0.01)
-            now = time.perf_counter()
-            if now - start >= TIMEOUT:
-                raise TimeoutError('App not responding') from exc
-
-
-def run_command(cmd):
     cmd_args = shlex.split(cmd)
     subprocess.run(
         cmd_args,
@@ -44,38 +21,90 @@ def run_command(cmd):
     )
 
 
-def benchmark_http(target, url):
+@dataclasses.dataclass
+class Benchmark:
     """
-    Run benchmarks against a target
+    A benchmark of a Docker case
     """
-    # Start the container
-    run_command(f'docker-compose run -d --rm --service-ports {target}')
-    time.sleep(3)  # Let it warm up
 
-    try:  # Wait for the server to be ready
-        print(f'Waiting on {target}...')
-        wait_for_port('localhost', 8000)
+    target: str
+    url: str = 'http://localhost:8000'
+    service_name: str = None
+    requests_amount: int = 1000
 
-    except TimeoutError:  # Eventually die of a timeout
-        print(f'Failed to reach {target}.')
-        raise
+    def _raise_timeout(self):
+        raise TimeoutError
 
-    else:  # Run benchmarks
-        print(f'Running benchmark on {target}...')
-        times = []
-        for _ in range(100):
-            delta = time_request(url)
-            times.append(delta)
-        return min(times), max(times)
+    @contextlib.contextmanager
+    def timer(self, timeout: int):
+        """
+        A context manager to time code
+        """
+        alarm = threading.Timer(timeout, self._raise_timeout)
+        alarm.start()
+        times = {}
+        times['start'] = start = time.perf_counter()
+        yield times  # Let the context'ed code be executed
+        times['end'] = end = time.perf_counter()
+        alarm.cancel()  # Cancel the timeout
+        times['elapsed'] = end - start
 
-    finally:  # Terminate the server
-        print(f'Terminating {target} server...')
-        run_command('docker-compose down')
+    def measure_build(self) -> dict:
+        """
+        Measure Docker image built time
+        """
+        service = self.service_name or self.target
+        with self.timer(600) as result:  # 10 minutes timeout
+            run(f'docker-compose build {service} --no-cache')
+        return result['elapsed']
+
+    def measure_requests(self):
+        """
+        Run Docker services and measure requests time
+        """
+        # Start the service
+        run(f'docker-compose run -d --rm --service-ports {self.target}')
+        time.sleep(3)  # Some warmup time
+
+        try:  # Measure requests
+            min_time = math.inf
+            max_time = -math.inf
+
+            for _ in range(self.requests_amount):
+                with self.timer(5) as result:  # 5 seconds timeout
+                    response = urllib.request.urlopen(self.url)
+                assert response.status == 200
+
+                # Record min and max times so far
+                min_time = min(min_time, result['elapsed'])
+                max_time = max(max_time, result['elapsed'])
+
+            return min_time, max_time
+
+        except TimeoutError:
+            raise
+
+        finally:  # Stop all containers
+            run('docker-compose down')
 
 
-# Run all benchmarks
-for target in [
-    'php-apache',
-    'php-octane',
-    'php-fpm-nginx',
-]: print(target, benchmark_http(target, 'http://localhost:8000'))
+if __name__ == '__main__':
+    # Pull external images
+    print('Pulling external Docker images...')
+    run('docker-compose pull')
+    print('---')
+
+    # Run all benchmarks
+    for benchmark in [
+        Benchmark(target='php-apache'),
+        Benchmark(target='php-fpm-nginx', service_name='php-fpm'),
+        Benchmark(target='php-octane'),
+        Benchmark(target='php-octane-alpine'),
+    ]:
+        print(f'Running benchmark for target {benchmark.target}...')
+        build_time = benchmark.measure_build()
+        print(f'Build time: {build_time:.3f} s')
+        min_request_time, max_request_time = benchmark.measure_requests()
+        print(f'Min request time out of {benchmark.requests_amount}: {min_request_time:.3f} s')
+        print(f'Max request time out of {benchmark.requests_amount}: {max_request_time:.3f} s')
+        print('---')
