@@ -1,7 +1,7 @@
 ###
 # Versions
 ###
-ARG PHP_VERSION=8.1-cli
+ARG PHP_VERSION=8.1
 ARG PHP_EXTENSION_INSTALLER_VERSION=1.5
 ARG COMPOSER_VERSION=2.3
 ARG LARAVEL_VERSION=9.1.10
@@ -21,7 +21,7 @@ FROM mlocati/php-extension-installer:${PHP_EXTENSION_INSTALLER_VERSION} AS php-e
 ###
 # PHP + Apache
 ###
-FROM php:8.1-apache AS php-apache
+FROM php:${PHP_VERSION}-apache AS php-apache
 
 # External tools
 COPY --from=composer /usr/bin/composer /usr/local/bin/
@@ -43,7 +43,7 @@ RUN composer create-project laravel/laravel . ${LARAVEL_VERSION}
 ###
 # PHP-FPM (official)
 ###
-FROM php:8.1-fpm AS php-fpm
+FROM php:${PHP_VERSION}-fpm AS php-fpm
 
 # External tools
 COPY --from=composer /usr/bin/composer /usr/local/bin/
@@ -61,7 +61,7 @@ RUN composer create-project laravel/laravel . ${LARAVEL_VERSION}
 ###
 # PHP + Octane
 ###
-FROM php:8.1-cli AS php-octane
+FROM php:${PHP_VERSION}-cli AS php-octane
 
 # External tools
 COPY --from=composer /usr/bin/composer /usr/local/bin/
@@ -81,7 +81,7 @@ CMD ["php", "artisan", "octane:start", "--host=0.0.0.0", "--port=8000"]
 ###
 # PHP + Octane
 ###
-FROM php:8.1-cli-alpine AS php-octane-alpine
+FROM php:${PHP_VERSION}-cli-alpine AS php-octane-alpine
 
 # External tools
 COPY --from=composer /usr/bin/composer /usr/local/bin/
