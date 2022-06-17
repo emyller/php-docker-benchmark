@@ -67,7 +67,7 @@ class Benchmark:
         """
         service = self.service_name or self.target
         with self.timer(600) as result:  # 10 minutes timeout
-            run(f'docker-compose build {service} --no-cache', check=True)
+            run(f'docker-compose build --no-cache {service}', check=True)
         return result['elapsed']
 
     def measure_requests(self):
