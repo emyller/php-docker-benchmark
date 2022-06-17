@@ -1,0 +1,11 @@
+name: benchmark
+on: push
+jobs:
+  run-benchmarks:
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_BUILDKIT: true
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run benchmarks
+        run: python run.py
