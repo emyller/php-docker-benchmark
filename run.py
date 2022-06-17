@@ -34,13 +34,22 @@ def wait_for_port(host, port):
                 raise TimeoutError('App not responding') from exc
 
 
+def run_command(cmd):
+    cmd_args = shlex.split(cmd)
+    subprocess.run(
+        cmd_args,
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+
 def benchmark_http(target, url):
     """
     Run benchmarks against a target
     """
     # Start the container
-    run_cmd = f'docker-compose run -d --rm --service-ports {target}'
-    container_id = subprocess.check_output(shlex.split(run_cmd)).decode()
+    run_command(f'docker-compose run -d --rm --service-ports {target}')
     time.sleep(3)  # Let it warm up
 
     try:  # Wait for the server to be ready
@@ -61,11 +70,12 @@ def benchmark_http(target, url):
 
     finally:  # Terminate the server
         print(f'Terminating {target} server...')
-        subprocess.check_output(shlex.split(f'docker kill {container_id}'))
+        run_command('docker-compose down')
 
 
 # Run all benchmarks
 for target in [
     'php-apache',
     'php-octane',
+    'php-fpm-nginx',
 ]: print(target, benchmark_http(target, 'http://localhost:8000'))
