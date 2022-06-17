@@ -5,6 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DOCKER_BUILDKIT: true
+      PYTHONUNBUFFERED: true
     steps:
       - uses: actions/checkout@v2
       - name: Run benchmarks
