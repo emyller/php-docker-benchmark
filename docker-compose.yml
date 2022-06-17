@@ -15,7 +15,7 @@ services:
     image: local/benchmarks/php-fpm:latest
   php-fpm-nginx:
     image: nginx:1-alpine
-    volumes: [./nginx.conf:/etc/nginx/conf.d/default.conf:ro]
+    volumes: [./files/nginx.conf:/etc/nginx/conf.d/default.conf:ro]
     depends_on: [php-fpm]
     ports: [8000:80]
 
@@ -24,7 +24,6 @@ services:
       context: .
       target: php-fpm-nginx-custom
     image: local/benchmarks/php-fpm-nginx-custom:latest
-    volumes: [./nginx.conf:/etc/nginx/sites-enabled/default:ro]
     ports: [8000:80]
     extra_hosts: [php-fpm:127.0.0.1]
 

@@ -75,6 +75,7 @@ apt clean
 
 # Install nginx
 RUN apt install -y nginx && apt clean
+COPY files/nginx.conf /etc/nginx/sites-enabled/default
 
 # Install PHP
 ARG PHP_VERSION
@@ -89,7 +90,7 @@ RUN apt install -y \
 
 # Run PHP-FPM
 RUN sed -ri -e 's!^listen =[^$]*!listen = php-fpm:9000!g' /etc/php/${PHP_VERSION}/fpm/pool.d/www.conf
-COPY start-server.sh /
+COPY files/start-server.sh /
 CMD ["sh", "/start-server.sh"]
 
 # Initialize and run the application
