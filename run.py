@@ -54,9 +54,11 @@ class Benchmark:
         alarm.start()
         times = {}
         times['start'] = start = time.perf_counter()
-        yield times  # Let the context'ed code be executed
+        try:
+            yield times  # Let the context'ed code be executed
+        finally:
+            alarm.cancel()  # Cancel the timeout
         times['end'] = end = time.perf_counter()
-        alarm.cancel()  # Cancel the timeout
         times['elapsed'] = end - start
 
     def measure_build(self) -> dict:
