@@ -7,6 +7,14 @@ This project aims to benchmark different PHP setups made with Docker:
 - PHP (official image) + Laravel Octane
 - PHP (official image, Alpine variant) + Laravel Octane
 
+
+## How to run
+
+```
+python run.py
+```
+
+
 ## Results
 
 For the latest results, visit the [benchmarks][] provided by GitHub Actions.
