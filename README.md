@@ -22,27 +22,30 @@ For the latest results, visit the [benchmarks][] provided by GitHub Actions.
 As of 2022, running on Apple silicon, results are:
 
 ```
-Pulling external Docker images...
----
 Running benchmark for target php-apache...
-Build time: 31.189 s
+Build time: 36.692 s
 Min request time out of 1000: 0.040 s
-Max request time out of 1000: 0.109 s
+Max request time out of 1000: 0.303 s
 ---
 Running benchmark for target php-fpm-nginx...
-Build time: 30.730 s
-Min request time out of 1000: 0.040 s
-Max request time out of 1000: 0.138 s
+Build time: 33.414 s
+Min request time out of 1000: 0.041 s
+Max request time out of 1000: 0.123 s
+---
+Running benchmark for target php-fpm-nginx-custom...
+Build time: 98.100 s
+Min request time out of 1000: 0.004 s
+Max request time out of 1000: 0.191 s
 ---
 Running benchmark for target php-octane...
-Build time: 135.528 s
+Build time: 146.454 s
 Min request time out of 1000: 0.002 s
-Max request time out of 1000: 0.051 s
+Max request time out of 1000: 0.073 s
 ---
 Running benchmark for target php-octane-alpine...
-Build time: 180.497 s
+Build time: 205.144 s
 Min request time out of 1000: 0.002 s
-Max request time out of 1000: 0.050 s
+Max request time out of 1000: 0.060 s
 ---
 ```
 
