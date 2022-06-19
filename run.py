@@ -1,7 +1,6 @@
 import contextlib
 import dataclasses
-import io
-import math
+import heapq
 import shlex
 import subprocess
 import threading
@@ -78,26 +77,26 @@ class Benchmark:
         run(f'docker-compose run -d --rm --service-ports {self.target}', check=True)
         time.sleep(3)  # Some warmup time
 
-        try:  # Measure requests
-            min_time = math.inf
-            max_time = -math.inf
+        # Request elapsed times
+        times = set()
 
+        try:  # Measure requests
             for _ in range(self.requests_amount):
                 with self.timer(5) as result:  # 5 seconds timeout
                     response = urllib.request.urlopen(self.url)
                 assert response.status == 200
 
-                # Record min and max times so far
-                min_time = min(min_time, result['elapsed'])
-                max_time = max(max_time, result['elapsed'])
-
-            return min_time, max_time
-
-        except TimeoutError:
-            raise
+                # Record elapsed time
+                elapsed = round(result['elapsed'], 3)
+                times.add(elapsed)
 
         finally:  # Stop all containers
             run('docker-compose down')
+
+        # Calculate shortest and longest times
+        shortest_times = heapq.nsmallest(5, times)
+        longest_times = heapq.nlargest(5, times)
+        return shortest_times, longest_times
 
 
 if __name__ == '__main__':
@@ -115,9 +114,13 @@ if __name__ == '__main__':
         Benchmark(target='php-octane-alpine'),
     ]:
         print(f'Running benchmark for target {benchmark.target}...')
+
+        # Build
         build_time = benchmark.measure_build()
         print(f'Build time: {build_time:.3f} s')
-        min_request_time, max_request_time = benchmark.measure_requests()
-        print(f'Min request time out of {benchmark.requests_amount}: {min_request_time:.3f} s')
-        print(f'Max request time out of {benchmark.requests_amount}: {max_request_time:.3f} s')
+
+        # Requests
+        min_request_times, max_request_times = benchmark.measure_requests()
+        print(f'Min request times out of {benchmark.requests_amount}, in seconds: ' + ', '.join(map(str, min_request_times)))
+        print(f'Max request times out of {benchmark.requests_amount}, in seconds: ' + ', '.join(map(str, max_request_times)))
         print('---')
